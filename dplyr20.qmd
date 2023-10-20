@@ -1,0 +1,148 @@
+---
+title: "Dplyr Lab Exercise 1 & 2"
+name: "Maximilien de La Ruelle"
+format: html
+---
+
+
+```{r}
+#| echo: false
+#| message: false
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(here)
+here::i_am("dplyr20.Rproj")
+spotify <- readRDS("top-spotify-songs-from-20102019-by-year.Rds")
+```
+
+## Exercise 1
+### Question 1
+```{r}
+#| echo: false
+#| message: false
+N1 <- spotify |>
+        distinct(title) |>
+        summarise(N1=n())
+```
+
+```{r}
+#| echo: false
+#| message: false
+N2 <- spotify |>
+        distinct(artist) |>
+        summarise(N2=n())
+```
+
+```{r}
+#| echo: false
+#| message: false
+N3 <- spotify |>
+        distinct("top genre") |>
+        summarise(N3=n())
+```
+
+The data set contains `r N1` songs, `r N2` artists and `r N3` genre
+
+### Question 2
+```{r}
+#| echo: false
+#| message: false
+spotify |>
+  group_by(Year=year) |>
+  summarise(`Number of songs`=n()) |>
+knitr::kable()
+```
+### Question 3
+```{r}
+#| echo: false
+#| message: false
+sp_popular <- spotify |> 
+  distinct(title, artist) |>
+  group_by(artist) |>
+  summarise(N=n()) |>
+  arrange(-N) |>
+  slice(1)
+```
+
+The artist with the most songs (`r sp_popular[2]`) is `r sp_popular[1]`
+
+
+### Question 4
+```{r}
+#| echo: false
+#| message: false
+spotify |>
+  distinct(`top genre`, bpm) |>
+  group_by(`top genre`) |>
+  summarise(`Minimal BPM`=min(bpm), `Maximal BPM`=max(bpm), `Mean BPM`=mean(bpm), `Median BPM`=median(bpm),number=n()) |>
+  knitr::kable()
+```
+
+```{r}
+#| echo: false
+#| message: false
+med_nrgy_dnce<- spotify |>
+  group_by(year) |>
+  summarise(energy=median(nrgy),dnc=median(dnce))
+
+```
+
+### Question 6
+```{r}
+#| echo: false
+#| message: false
+ggplot(med_nrgy_dnce, aes(x = year)) +
+  geom_line(aes(y = energy), color = "darkred") +
+  geom_line(aes(y = dnc), color="darkblue") + 
+  labs(title="Temporal evolution of median energy and danceability over 2000-2019", x="Years", y="Median values") 
+```
+
+## Exercise 2
+
+```{r}
+#| echo: false
+#| message: false
+dropout <- readRDS("dropout.Rds")
+```
+### Question 1
+```{r}
+#| echo: false
+#| message: false
+tab1 <-dropout |>
+  group_by(Gender,`Marital status`) |>
+  summarise(`Median age at enrollment`=median(`Age at enrollment`))
+knitr::kable(tab1)
+```
+### Question 2
+```{r}
+#| echo: false
+#| message: false
+tab2 <- tab1 |>
+  pivot_wider(names_from= Gender, values_from=`Median age at enrollment`)
+knitr::kable(tab2)
+
+```
+### Question 3
+```{r}
+#| echo: false
+#| message: false
+cur_units <- dropout |>
+  select (Target,`Curricular units 1st sem (approved)`,`Curricular units 1st sem (evaluations)`,`Curricular units 1st sem (without evaluations)`,`Curricular units 2nd sem (evaluations)`,`Curricular units 2nd sem (without evaluations)`,`Curricular units 1st sem (credited)`,`Curricular units 1st sem (grade)`,`Curricular units 2nd sem (credited)`,`Curricular units 2nd sem (grade)`,`Curricular units 1st sem (enrolled)`,`Curricular units 2nd sem (enrolled)`,`Curricular units 2nd sem (approved)`) 
+
+cur_units_mean <- cur_units |>
+  group_by(Target) |>
+  summarise(across(where(is.numeric),mean))
+
+knitr::kable(cur_units_mean)
+```
+### Question 4
+```{r}
+#| echo: false
+#| message: false
+t_cur_units_mean <- cur_units_mean |>
+  pivot_longer(starts_with("Curricular unit"), names_to="Units") |>
+  pivot_wider(names_from=Target)
+knitr::kable(t_cur_units_mean)
+```
+
